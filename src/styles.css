@@ -1,0 +1,273 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.app-header {
+    background-color: #2d2d2d;
+    padding: 12px 20px;
+    border-bottom: 1px solid #404040;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-header h1 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.version-info {
+    font-size: 12px;
+    color: #888;
+}
+
+.app-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.config-panel {
+    width: 300px;
+    background-color: #252526;
+    border-right: 1px solid #404040;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.config-panel section {
+    margin-bottom: 24px;
+}
+
+.repo-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.repo-status {
+    font-size: 12px;
+    color: #888;
+}
+
+.repo-meta {
+    margin: 8px 0;
+}
+
+.repo-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.repo-line label {
+    color: #aaa;
+    font-weight: 500;
+}
+
+.repo-line span {
+    color: #ccc;
+    font-family: monospace;
+}
+
+#re-clone-btn {
+    padding: 6px 12px;
+    background-color: #d73a49;
+    border: none;
+    color: #ffffff;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#re-clone-btn:hover:not(:disabled) {
+    background-color: #e36271;
+}
+
+#re-clone-btn:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+.config-panel h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #cccccc;
+}
+
+.config-panel select {
+    width: 100%;
+    padding: 8px;
+    background-color: #3c3c3c;
+    border: 1px solid #555;
+    color: #ffffff;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.config-panel select:focus {
+    outline: none;
+    border-color: #007acc;
+}
+
+.config-panel select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.port-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.port-controls select {
+    flex: 1;
+}
+
+.port-controls button {
+    padding: 8px 12px;
+    background-color: #555;
+    border: none;
+    color: #ffffff;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.port-controls button:hover {
+    background-color: #666;
+}
+
+.baud-rate {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.baud-rate label {
+    font-size: 12px;
+    color: #cccccc;
+}
+
+.baud-rate select {
+    flex: 1;
+    max-width: 120px;
+}
+
+.build-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.build-controls button {
+    padding: 10px 16px;
+    background-color: #0e639c;
+    border: none;
+    color: #ffffff;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.build-controls button:hover:not(:disabled) {
+    background-color: #1177bb;
+}
+
+.build-controls button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+.build-controls button#stop-btn {
+    background-color: #d73a49;
+}
+
+.build-controls button#stop-btn:hover:not(:disabled) {
+    background-color: #e36271;
+}
+
+.terminal-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.terminal-panel h2 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #cccccc;
+}
+
+#terminal-container {
+    flex: 1;
+    background-color: #1e1e1e;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+#terminal-placeholder {
+    padding: 20px;
+    color: #888;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.app-footer {
+    background-color: #2d2d2d;
+    border-top: 1px solid #404040;
+    padding: 8px 20px;
+}
+
+.status-bar {
+    font-size: 12px;
+    color: #cccccc;
+}
+
+/* Terminal styles (will be enhanced with xterm.js) */
+.terminal {
+    width: 100%;
+    height: 100%;
+}
+
+.xterm {
+    padding: 10px;
+}
+
+.xterm-screen {
+    background-color: #1e1e1e !important;
+}
+
+.xterm-cursor {
+    background-color: #ffffff !important;
+}
+
+.xterm-selection {
+    background-color: #3a3a3a !important;
+}

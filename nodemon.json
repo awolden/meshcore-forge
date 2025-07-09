@@ -1,0 +1,19 @@
+{
+  "watch": [
+    "electron/",
+    "src/"
+  ],
+  "ext": "js,html,css,json",
+  "ignore": [
+    "node_modules/",
+    "build/",
+    "dist/",
+    "out/",
+    "resources/"
+  ],
+  "exec": "electron . --dev",
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "delay": 1000
+}

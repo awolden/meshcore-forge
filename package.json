@@ -1,0 +1,80 @@
+{
+  "name": "meshcore-forge",
+  "version": "1.0.0",
+  "description": "Cross-platform Electron application for building MeshCore firmware",
+  "main": "electron/main.js",
+  "author": "MeshCore Team",
+  "license": "MIT",
+  "homepage": "https://github.com/ripplebiz/MeshCore",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"vite\" \"nodemon --watch electron --ext js --exec \\\"electron . --dev\\\"\"",
+    "dev:electron": "nodemon --watch electron --ext js --exec \"electron . --dev\"",
+    "dev:react": "vite",
+    "build": "vite build && node scripts/bundle-resources.js && electron-builder",
+    "build-win": "vite build && node scripts/bundle-resources.js && electron-builder --win",
+    "build-mac": "vite build && node scripts/bundle-resources.js && electron-builder --mac",
+    "build-linux": "vite build && node scripts/bundle-resources.js && electron-builder --linux",
+    "bundle-resources": "node scripts/bundle-resources.js",
+    "clean": "rimraf build dist out",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.6.4",
+    "nodemon": "^3.1.10",
+    "rimraf": "^5.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "fs-extra": "^11.0.0",
+    "serialport": "^13.0.0",
+    "simple-git": "^3.28.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.309.0"
+  },
+  "build": {
+    "appId": "com.meshcore.forge",
+    "productName": "MeshCore Forge",
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/python/",
+        "to": "resources/python/"
+      },
+      {
+        "from": "resources/platformio/",
+        "to": "resources/platformio/"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  }
+}

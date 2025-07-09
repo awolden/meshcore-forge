@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeshCore Forge</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>MeshCore Forge</h1>
+            <div class="version-info">
+                <span id="version-display">Loading...</span>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="config-panel">
+                <section class="repo-info">
+                    <h2>MeshCore Repository</h2>
+                    <div class="repo-details">
+                        <div class="repo-status">
+                            <span id="repo-status-text">Loading...</span>
+                        </div>
+                        <div class="repo-meta" id="repo-meta" style="display: none;">
+                            <div class="repo-line">
+                                <label>Commit:</label>
+                                <span id="repo-commit-short">-</span>
+                            </div>
+                            <div class="repo-line">
+                                <label>Date:</label>
+                                <span id="repo-date">-</span>
+                            </div>
+                        </div>
+                        <button id="re-clone-btn" disabled>Re-clone</button>
+                    </div>
+                </section>
+
+                <section class="board-selection">
+                    <h2>Board Selection</h2>
+                    <select id="board-select" disabled>
+                        <option value="">Select a board...</option>
+                    </select>
+                </section>
+
+                <section class="variant-selection">
+                    <h2>Variant Selection</h2>
+                    <select id="variant-select" disabled>
+                        <option value="">Select a variant...</option>
+                    </select>
+                </section>
+
+                <section class="serial-port-selection">
+                    <h2>Serial Port</h2>
+                    <div class="port-controls">
+                        <select id="port-select" disabled>
+                            <option value="">Select a port...</option>
+                        </select>
+                        <button id="refresh-ports-btn">Refresh</button>
+                    </div>
+                    <div class="baud-rate">
+                        <label for="baud-rate-select">Baud Rate:</label>
+                        <select id="baud-rate-select">
+                            <option value="115200">115200</option>
+                        </select>
+                    </div>
+                </section>
+
+                <section class="build-controls">
+                    <h2>Flash Firmware</h2>
+                    <button id="flash-btn" disabled>Flash</button>
+                    <button id="stop-btn" disabled>Stop</button>
+                </section>
+            </div>
+
+            <div class="terminal-panel">
+                <h2>Build Output</h2>
+                <div id="terminal-container">
+                    <div id="terminal-placeholder">
+                        Build output will appear here...
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <div class="status-bar">
+                <span id="status-text">Ready</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="../node_modules/@xterm/xterm/lib/xterm.js"></script>
+    <script src="../node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html>
