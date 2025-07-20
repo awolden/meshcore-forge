@@ -3,6 +3,7 @@ import { RefreshCw, Zap, Square, GitBranch, Usb, Settings } from 'lucide-react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
+import darkLogo from '/dark_logo.png'
 
 function App() {
   const [version, setVersion] = useState('Loading...')
@@ -474,7 +475,7 @@ function App() {
       {/* Header */}
       <header className="bg-dark-panel border-b border-dark-border px-5 py-3 flex justify-between items-center">
         <div className="flex items-center gap-1">
-          <img src="/dark_logo.png" alt="MeshCore" className="h-8" />
+          <img src={darkLogo} alt="MeshCore" className="h-8" />
           <span className="text-2xl font-inter font-medium text-dark-text tracking-wide">Forge</span>
         </div>
         <span className="text-xs text-dark-muted">{version}</span>
