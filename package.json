@@ -45,7 +45,6 @@
   "build": {
     "appId": "com.meshcore.forge",
     "productName": "MeshCore Forge",
-    "publish": "never",
     "directories": {
       "output": "build"
     },

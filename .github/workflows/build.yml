@@ -48,6 +48,9 @@ jobs:
 
       - name: Build Electron app
         run: npm run build-${{ matrix.platform }}
+        env:
+          # Prevent electron-builder from trying to publish
+          CI: false
 
       - name: List build outputs (debug)
         run: ls -la build/
