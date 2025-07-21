@@ -1,58 +1,58 @@
  name: Build Cross-Platform
 
-  on:
-    workflow_dispatch:
-      inputs:
-        create_release:
-          description: 'Create GitHub release'
-          required: false
-          default: false
-          type: boolean
-    push:
-      tags:
-        - 'v*'
+ on:
+   workflow_dispatch:
+     inputs:
+       create_release:
+         description: 'Create GitHub release'
+         required: false
+         default: false
+         type: boolean
+   push:
+     tags:
+       - 'v*'
 
-  jobs:
-    build:
-      runs-on: ${{ matrix.os }}
-      strategy:
-        matrix:
-          include:
-            - os: ubuntu-latest
-              platform: linux
-            - os: windows-latest
-              platform: windows
-            - os: macos-latest
-              platform: mac
+ jobs:
+   build:
+     runs-on: ${{ matrix.os }}
+     strategy:
+       matrix:
+         include:
+           - os: ubuntu-latest
+             platform: linux
+           - os: windows-latest
+             platform: windows
+           - os: macos-latest
+             platform: mac
 
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
+     steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
 
-        - name: Setup Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: '18'
-            cache: 'npm'
+       - name: Setup Node.js
+         uses: actions/setup-node@v4
+         with:
+           node-version: '18'
+           cache: 'npm'
 
-        - name: Install dependencies
-          run: npm install
+       - name: Install dependencies
+         run: npm install
 
-        - name: Build React app
-          run: npm run build || npx vite build
+       - name: Build React app
+         run: npm run build || npx vite build
 
-        - name: Bundle resources
-          run: npm run bundle-resources
+       - name: Bundle resources
+         run: npm run bundle-resources
 
-        - name: Build Electron app
-          run: npm run build-${{ matrix.platform }}
+       - name: Build Electron app
+         run: npm run build-${{ matrix.platform }}
 
-        - name: Upload build artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: ${{ matrix.platform }}-build
-            path: |
-              build/*.dmg
-              build/*.exe
-              build/*.AppImage
-            retention-days: 30
+       - name: Upload build artifacts
+         uses: actions/upload-artifact@v4
+         with:
+           name: ${{ matrix.platform }}-build
+           path: |
+             build/*.dmg
+             build/*.exe
+             build/*.AppImage
+           retention-days: 30
