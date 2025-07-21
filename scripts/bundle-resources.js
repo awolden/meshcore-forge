@@ -101,19 +101,19 @@ async function installPlatformIO(pythonExecutable, platformioDir) {
     
     execSync(`"${pythonExecutable}" -m venv "${venvDir}"`, { stdio: 'inherit' });
     
-    // Get pip executable path
+    // Get python executable path in venv
     const platform = process.platform;
-    const pipExecutable = platform === 'win32' 
-      ? path.join(venvDir, 'Scripts', 'pip.exe')
-      : path.join(venvDir, 'bin', 'pip');
+    const venvPythonExecutable = platform === 'win32' 
+      ? path.join(venvDir, 'Scripts', 'python.exe')
+      : path.join(venvDir, 'bin', 'python');
     
-    // Upgrade pip
+    // Upgrade pip using the modern method
     console.log('🔧 Upgrading pip...');
-    execSync(`"${pipExecutable}" install --upgrade pip`, { stdio: 'inherit' });
+    execSync(`"${venvPythonExecutable}" -m pip install --upgrade pip`, { stdio: 'inherit' });
     
     // Install PlatformIO
     console.log('📦 Installing PlatformIO core...');
-    execSync(`"${pipExecutable}" install platformio`, { stdio: 'inherit' });
+    execSync(`"${venvPythonExecutable}" -m pip install platformio`, { stdio: 'inherit' });
     
     console.log('✅ PlatformIO installation completed');
     
