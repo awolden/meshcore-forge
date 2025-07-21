@@ -1,6 +1,6 @@
 {
   "name": "meshcore-forge",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.1",
   "description": "Cross-platform Electron application for building MeshCore firmware",
   "main": "electron/main.js",
   "author": "MeshCore Team",
@@ -51,30 +51,30 @@
     },
     "files": [
       "electron/**/*",
-      "src/**/*",
+      "dist/**/*",
       "package.json"
     ],
     "extraResources": [
       {
         "from": "resources/python/",
-        "to": "resources/python/"
+        "to": "python/"
       },
       {
         "from": "resources/platformio/",
-        "to": "resources/platformio/"
+        "to": "platformio/"
       }
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.ico"
+      "icon": "assets/dark_icon.png"
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/icon.icns"
+      "icon": "assets/dark_icon_512.png"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/icon.png"
+      "icon": "assets/dark_icon.png"
     }
   }
 }

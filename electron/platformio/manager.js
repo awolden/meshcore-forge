@@ -23,14 +23,23 @@ class PlatformIOManager {
     // MeshCore repo is in userData/resources/meshcore
     this.workingDirectory = path.join(appResourcesPath, 'meshcore');
     
-    // Python and PlatformIO will be bundled with the app
-    const appPath = app.getAppPath();
-    const bundledResourcesPath = path.join(appPath, 'resources');
+    // Python and PlatformIO are bundled with the app in process.resourcesPath
+    // In packaged apps: process.resourcesPath points to app.asar/resources/
+    // In dev: use local resources directory
+    let bundledResourcesPath;
+    if (process.argv.includes('--dev')) {
+      bundledResourcesPath = path.join(__dirname, '../../resources');
+    } else {
+      bundledResourcesPath = process.resourcesPath;
+    }
+    
     this.pythonPath = this.getPythonPath(bundledResourcesPath);
     this.pioPath = this.getPlatformIOPath(bundledResourcesPath);
     
     console.log('PlatformIO Manager initialized');
     console.log('Platform:', process.platform);
+    console.log('Dev mode:', process.argv.includes('--dev'));
+    console.log('Bundled resources path:', bundledResourcesPath);
     console.log('Working directory (MeshCore):', this.workingDirectory);
     console.log('Python path:', this.pythonPath);
     console.log('PIO path:', this.pioPath);
@@ -67,21 +76,33 @@ class PlatformIOManager {
 
   async checkDependencies() {
     try {
+      console.log('🔍 Checking dependencies...');
+      console.log('Working directory:', this.workingDirectory);
+      console.log('Python path:', this.pythonPath);
+      console.log('PIO path:', this.pioPath);
+
       // Check if working directory exists
-      if (!await fs.pathExists(this.workingDirectory)) {
+      const workingDirExists = await fs.pathExists(this.workingDirectory);
+      console.log('Working directory exists:', workingDirExists);
+      if (!workingDirExists) {
         throw new Error('MeshCore repository not found. Please run resource bundling first.');
       }
 
       // Check if Python exists
-      if (!await fs.pathExists(this.pythonPath)) {
+      const pythonExists = await fs.pathExists(this.pythonPath);
+      console.log('Python exists:', pythonExists);
+      if (!pythonExists) {
         throw new Error('Python runtime not found. Please run resource bundling first.');
       }
 
       // Check if PlatformIO exists
-      if (!await fs.pathExists(this.pioPath)) {
+      const pioExists = await fs.pathExists(this.pioPath);
+      console.log('PlatformIO exists:', pioExists);
+      if (!pioExists) {
         throw new Error('PlatformIO not found. Please run resource bundling first.');
       }
 
+      console.log('✅ All dependencies found');
       return true;
     } catch (error) {
       console.error('Dependency check failed:', error.message);
