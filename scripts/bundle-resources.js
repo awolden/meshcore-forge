@@ -10,7 +10,7 @@ console.log('🔧 Bundling resources for MeshCore Forge...');
 
 // Download URLs for embedded Python
 const PYTHON_DOWNLOADS = {
-  'win32': 'https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-pc-windows-msvc-install_only.tar.gz',
+  'win32': 'https://github.com/indygreg/python-build-standalone/releases/download/20241016/cpython-3.11.10+20241016-x86_64-pc-windows-msvc-install_only.tar.gz',
   'darwin': 'https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-apple-darwin-install_only.tar.gz',
   'linux': 'https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz'
 };
