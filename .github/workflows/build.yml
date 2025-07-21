@@ -23,7 +23,7 @@ jobs:
           - os: ubuntu-latest
             platform: linux
           - os: windows-latest  
-            platform: windows
+            platform: win
           - os: macos-latest
             platform: mac
 
