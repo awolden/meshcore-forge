@@ -38,7 +38,6 @@
     "@xterm/xterm": "^5.5.0",
     "fs-extra": "^11.0.0",
     "serialport": "^13.0.0",
-    "simple-git": "^3.28.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "lucide-react": "^0.309.0"
