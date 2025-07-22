@@ -69,7 +69,11 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/dark_icon_512.png"
+      "icon": "assets/dark_icon_512.png",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "linux": {
       "target": "AppImage",
