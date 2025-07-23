@@ -69,7 +69,7 @@
       "icon": "assets/dark_icon.png"
     },
     "mac": {
-      "identity": null,
+      "identity": "MeshCore Forge Certificate",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
       "target": [

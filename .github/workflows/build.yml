@@ -46,6 +46,27 @@ jobs:
       - name: Bundle resources
         run: npm run bundle-resources
 
+      - name: Create self-signed certificate (macOS)
+        if: matrix.platform == 'mac'
+        run: |
+          # Create a temporary keychain
+          security create-keychain -p "temppass" $RUNNER_TEMP/build.keychain
+          security list-keychains -d user -s $RUNNER_TEMP/build.keychain
+          security unlock-keychain -p "temppass" $RUNNER_TEMP/build.keychain
+          security set-keychain-settings -t 3600 -u $RUNNER_TEMP/build.keychain
+          
+          # Generate a self-signed certificate using openssl
+          openssl req -x509 -newkey rsa:4096 -keyout $RUNNER_TEMP/key.pem -out $RUNNER_TEMP/cert.pem -days 365 -nodes -subj "/CN=MeshCore Forge Certificate/O=MeshCore/C=US"
+          
+          # Convert to p12 format
+          openssl pkcs12 -export -out $RUNNER_TEMP/cert.p12 -inkey $RUNNER_TEMP/key.pem -in $RUNNER_TEMP/cert.pem -password pass:temppass
+          
+          # Import into keychain
+          security import $RUNNER_TEMP/cert.p12 -k $RUNNER_TEMP/build.keychain -P temppass -A
+          
+          # Trust the certificate for code signing
+          security set-key-partition-list -S apple-tool:,apple: -s -k "temppass" $RUNNER_TEMP/build.keychain
+
       - name: Build Electron app
         run: npm run build-${{ matrix.platform }} --publish=never
         env:
@@ -53,6 +74,13 @@ jobs:
           GITHUB_TOKEN: ""
           GH_TOKEN: ""
           CI: "false"
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_KEYCHAIN: ${{ runner.temp }}/build.keychain
+
+      - name: Clean up keychain (macOS)
+        if: always() && matrix.platform == 'mac'
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain || true
 
       - name: List build outputs (debug)
         run: ls -la build/
