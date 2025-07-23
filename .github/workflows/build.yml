@@ -49,8 +49,10 @@ jobs:
       - name: Build Electron app
         run: npm run build-${{ matrix.platform }}
         env:
-          # Disable code signing for unsigned builds
+          # Disable code signing and auto-publishing
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ""
+          CI: ""
 
       - name: List build outputs (debug)
         run: ls -la build/
