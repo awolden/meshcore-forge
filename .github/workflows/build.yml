@@ -46,20 +46,37 @@ jobs:
       - name: Bundle resources
         run: npm run bundle-resources
 
+      - name: Create self-signed certificate (macOS)
+        if: matrix.platform == 'mac'
+        run: |
+          # Create a temporary keychain
+          security create-keychain -p "temppass" $RUNNER_TEMP/build.keychain
+          security default-keychain -s $RUNNER_TEMP/build.keychain
+          security unlock-keychain -p "temppass" $RUNNER_TEMP/build.keychain
+          security set-keychain-settings -t 3600 -u $RUNNER_TEMP/build.keychain
+          
+          # Create self-signed certificate
+          security create-certificate \
+            -c "MeshCore Forge Certificate" \
+            -C "com.meshcore.forge" \
+            -t 1 \
+            -k $RUNNER_TEMP/build.keychain
+            
+          # Trust the certificate for code signing
+          security set-key-partition-list -S apple-tool:,apple: -s -k "temppass" $RUNNER_TEMP/build.keychain
+
       - name: Build Electron app
         run: npm run build-${{ matrix.platform }} --publish=never
         env:
-          # Disable code signing and auto-publishing
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          # Disable auto-publishing
           GITHUB_TOKEN: ""
           GH_TOKEN: ""
           CI: "false"
 
-      - name: Remove quarantine from macOS build
-        if: matrix.platform == 'mac'
+      - name: Clean up keychain (macOS)
+        if: always() && matrix.platform == 'mac'
         run: |
-          find build -name "*.app" -exec xattr -cr {} \;
-          find build -name "*.dmg" -exec xattr -cr {} \;
+          security delete-keychain $RUNNER_TEMP/build.keychain || true
 
       - name: List build outputs (debug)
         run: ls -la build/

@@ -69,12 +69,19 @@
       "icon": "assets/dark_icon.png"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "assets/dark_icon_512.png",
-      "identity": null,
-      "signIgnore": [
-        "node_modules"
-      ]
+      "identity": "MeshCore Forge Certificate",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/dark_icon_512.png"
+    },
+    "dmg": {
+      "sign": false
     },
     "linux": {
       "target": "AppImage",
