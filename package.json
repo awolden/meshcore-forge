@@ -69,7 +69,11 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "assets/dark_icon_512.png"
+      "icon": "assets/dark_icon_512.png",
+      "identity": null,
+      "signIgnore": [
+        "node_modules"
+      ]
     },
     "linux": {
       "target": "AppImage",
