@@ -55,6 +55,12 @@ jobs:
           GH_TOKEN: ""
           CI: "false"
 
+      - name: Remove quarantine from macOS build
+        if: matrix.platform == 'mac'
+        run: |
+          find build -name "*.app" -exec xattr -cr {} \;
+          find build -name "*.dmg" -exec xattr -cr {} \;
+
       - name: List build outputs (debug)
         run: ls -la build/
         shell: bash
