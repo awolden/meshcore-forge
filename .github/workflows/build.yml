@@ -37,6 +37,12 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Setup Python (macOS)
+        if: matrix.platform == 'mac'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies
         run: npm install
 
