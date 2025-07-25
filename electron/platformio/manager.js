@@ -30,24 +30,7 @@ class PlatformIOManager {
     if (process.argv.includes('--dev')) {
       bundledResourcesPath = path.join(__dirname, '../../resources');
     } else {
-      // Try multiple possible locations for bundled resources
-      const possiblePaths = [
-        process.resourcesPath,
-        path.join(process.resourcesPath, 'app'),
-        path.join(__dirname, '../../resources'),
-        path.join(process.cwd(), 'resources')
-      ];
-      
-      bundledResourcesPath = possiblePaths.find(p => {
-        const pythonExists = fs.existsSync(this.getPythonPath(p));
-        console.log(`Checking bundled resources path: ${p} - Python exists: ${pythonExists}`);
-        return pythonExists;
-      });
-      
-      if (!bundledResourcesPath) {
-        console.error('Could not find bundled resources in any of these paths:', possiblePaths);
-        bundledResourcesPath = process.resourcesPath; // Fallback
-      }
+      bundledResourcesPath = process.resourcesPath;
     }
     
     this.pythonPath = this.getPythonPath(bundledResourcesPath);
@@ -60,17 +43,6 @@ class PlatformIOManager {
     console.log('Working directory (MeshCore):', this.workingDirectory);
     console.log('Python path:', this.pythonPath);
     console.log('PIO path:', this.pioPath);
-    
-    // Verify the resources actually exist
-    if (!fs.existsSync(this.pythonPath)) {
-      console.error(`Python executable not found at: ${this.pythonPath}`);
-      console.error('Bundled resources may not be packaged correctly');
-    }
-    
-    if (!fs.existsSync(this.pioPath)) {
-      console.error(`PlatformIO executable not found at: ${this.pioPath}`);
-      console.error('Bundled resources may not be packaged correctly');
-    }
   }
 
   getPythonPath(resourcesPath) {
