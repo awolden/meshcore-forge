@@ -277,12 +277,17 @@ class PlatformIOManager {
         console.log('Working directory:', this.workingDirectory);
         
         // Execute command via shell (environment variables are in the command string)
-        this.currentProcess = spawn('sh', ['-c', command], {
+        const isWindows = process.platform === 'win32';
+        const shell = isWindows ? 'cmd' : 'sh';
+        const shellFlag = isWindows ? '/c' : '-c';
+        const pathSeparator = isWindows ? ';' : ':';
+        
+        this.currentProcess = spawn(shell, [shellFlag, command], {
           cwd: this.workingDirectory,
           env: {
             ...process.env,
             PYTHONPATH: path.dirname(this.pythonPath),
-            PATH: `${path.dirname(this.pioPath)}:${process.env.PATH}`
+            PATH: `${path.dirname(this.pioPath)}${pathSeparator}${process.env.PATH}`
           }
         });
 
