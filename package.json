@@ -67,7 +67,8 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/dark_icon.png"
+      "icon": "assets/dark_icon.png",
+      "publish": []
     },
     "mac": {
       "identity": "MeshCore Forge Certificate",
@@ -79,14 +80,16 @@
           "arch": ["x64", "arm64"]
         }
       ],
-      "icon": "assets/dark_icon_512.png"
+      "icon": "assets/dark_icon_512.png",
+      "publish": []
     },
     "dmg": {
       "sign": false
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/dark_icon.png"
+      "icon": "assets/dark_icon.png",
+      "publish": []
     }
   }
 }
