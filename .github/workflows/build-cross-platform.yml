@@ -51,8 +51,6 @@
          run: npm run bundle-resources
 
        - name: Build Electron app
-         env:
-           CI: false
          run: npm run build-${{ matrix.platform }}
 
        - name: Upload build artifacts
