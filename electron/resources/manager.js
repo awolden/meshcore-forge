@@ -119,7 +119,38 @@ class ResourceManager extends EventEmitter {
       // Extract zip
       const platform = process.platform;
       if (platform === 'win32') {
-        execSync(`powershell -command "Expand-Archive -Path '${zipPath}' -DestinationPath '${this.resourcesPath}' -Force"`, { stdio: 'inherit' });
+        // Try multiple extraction methods for Windows
+        let extractSuccess = false;
+        
+        // Method 1: Try tar (available in Windows 10+)
+        try {
+          console.log('   Trying tar extraction...');
+          execSync(`tar -xf "${zipPath}" -C "${this.resourcesPath}"`, { stdio: 'inherit' });
+          extractSuccess = true;
+        } catch (tarError) {
+          console.log('   tar extraction failed, trying PowerShell with .NET...');
+          
+          // Method 2: Try PowerShell with .NET compression directly
+          try {
+            const psCommand = `powershell -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('${zipPath.replace(/'/g, "''")}', '${this.resourcesPath.replace(/'/g, "''")}')"`;
+            execSync(psCommand, { stdio: 'inherit' });
+            extractSuccess = true;
+          } catch (psError) {
+            console.log('   PowerShell .NET extraction failed, trying Expand-Archive...');
+            
+            // Method 3: Try original PowerShell method as fallback
+            try {
+              execSync(`powershell -ExecutionPolicy Bypass -command "Expand-Archive -Path '${zipPath}' -DestinationPath '${this.resourcesPath}' -Force"`, { stdio: 'inherit' });
+              extractSuccess = true;
+            } catch (ps2Error) {
+              throw new Error(`All Windows extraction methods failed. tar: ${tarError.message}, PS .NET: ${psError.message}, PS Expand: ${ps2Error.message}`);
+            }
+          }
+        }
+        
+        if (!extractSuccess) {
+          throw new Error('Failed to extract archive with any method');
+        }
       } else {
         execSync(`unzip -q "${zipPath}" -d "${this.resourcesPath}"`, { stdio: 'inherit' });
       }
