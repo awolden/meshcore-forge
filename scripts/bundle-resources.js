@@ -99,7 +99,9 @@ async function installPlatformIO(pythonExecutable, platformioDir) {
     const venvDir = path.join(platformioDir, 'penv');
     console.log(`🔧 Creating virtual environment at ${venvDir}...`);
     
-    execSync(`"${pythonExecutable}" -m venv --copies "${venvDir}"`, { stdio: 'inherit' });
+    // Use --copies on Windows to avoid hardcoded path issues, regular venv on Unix
+    const venvFlags = process.platform === 'win32' ? '--copies' : '';
+    execSync(`"${pythonExecutable}" -m venv ${venvFlags} "${venvDir}"`, { stdio: 'inherit' });
     
     // Get python executable path in venv
     const platform = process.platform;
