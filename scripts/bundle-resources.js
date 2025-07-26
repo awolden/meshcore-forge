@@ -121,13 +121,12 @@ async function installPlatformIO(pythonExecutable, platformioDir) {
       console.log('🔧 Making virtual environment relocatable...');
       const scriptsDir = path.join(venvDir, 'Scripts');
       
-      // Create a batch file that sets up the Python path dynamically
+      // Create a batch file that calls PlatformIO through Python directly
       const pioWrapperPath = path.join(scriptsDir, 'pio-wrapper.bat');
       const wrapperContent = `@echo off
 set "SCRIPT_DIR=%~dp0"
-set "VENV_DIR=%SCRIPT_DIR%\\.."
 set "PYTHON_EXE=%SCRIPT_DIR%\\python.exe"
-"%PYTHON_EXE%" "%SCRIPT_DIR%\\pio.exe" %*
+"%PYTHON_EXE%" -m platformio %*
 `;
       await fs.writeFile(pioWrapperPath, wrapperContent);
       console.log('✅ Created relocatable PlatformIO wrapper');
