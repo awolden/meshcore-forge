@@ -65,7 +65,10 @@ class PlatformIOManager {
     
     switch (platform) {
       case 'win32':
-        return path.join(resourcesPath, 'platformio', 'penv', 'Scripts', 'pio.exe');
+        // Use relocatable wrapper if available, fallback to direct exe
+        const wrapperPath = path.join(resourcesPath, 'platformio', 'penv', 'Scripts', 'pio-wrapper.bat');
+        const directPath = path.join(resourcesPath, 'platformio', 'penv', 'Scripts', 'pio.exe');
+        return fs.existsSync(wrapperPath) ? wrapperPath : directPath;
       case 'darwin':
       case 'linux':
         return path.join(resourcesPath, 'platformio', 'penv', 'bin', 'pio');

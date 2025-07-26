@@ -99,9 +99,8 @@ async function installPlatformIO(pythonExecutable, platformioDir) {
     const venvDir = path.join(platformioDir, 'penv');
     console.log(`🔧 Creating virtual environment at ${venvDir}...`);
     
-    // Use --copies on Windows to avoid hardcoded path issues, regular venv on Unix
-    const venvFlags = process.platform === 'win32' ? '--copies' : '';
-    execSync(`"${pythonExecutable}" -m venv ${venvFlags} "${venvDir}"`, { stdio: 'inherit' });
+    // Create virtual environment without hardcoded paths
+    execSync(`"${pythonExecutable}" -m venv "${venvDir}"`, { stdio: 'inherit' });
     
     // Get python executable path in venv
     const platform = process.platform;
@@ -116,6 +115,23 @@ async function installPlatformIO(pythonExecutable, platformioDir) {
     // Install PlatformIO
     console.log('📦 Installing PlatformIO core...');
     execSync(`"${venvPythonExecutable}" -m pip install platformio`, { stdio: 'inherit' });
+    
+    // Make the virtual environment relocatable on Windows
+    if (platform === 'win32') {
+      console.log('🔧 Making virtual environment relocatable...');
+      const scriptsDir = path.join(venvDir, 'Scripts');
+      
+      // Create a batch file that sets up the Python path dynamically
+      const pioWrapperPath = path.join(scriptsDir, 'pio-wrapper.bat');
+      const wrapperContent = `@echo off
+set "SCRIPT_DIR=%~dp0"
+set "VENV_DIR=%SCRIPT_DIR%\\.."
+set "PYTHON_EXE=%SCRIPT_DIR%\\python.exe"
+"%PYTHON_EXE%" "%SCRIPT_DIR%\\pio.exe" %*
+`;
+      await fs.writeFile(pioWrapperPath, wrapperContent);
+      console.log('✅ Created relocatable PlatformIO wrapper');
+    }
     
     console.log('✅ PlatformIO installation completed');
     
