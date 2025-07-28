@@ -1,0 +1,206 @@
+name: Build Cross-Platform
+
+on:
+  # Trigger on version tags for releases
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - 'main'
+  # Allow manual triggering for testing
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create GitHub release'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest  
+            platform: win
+          - os: macos-latest
+            platform: mac
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Python (macOS)
+        if: matrix.platform == 'mac'
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build React app
+        run: npm run build || npx vite build
+
+      - name: Bundle resources
+        run: npm run bundle-resources
+
+      - name: Create self-signed certificate (macOS)
+        if: matrix.platform == 'mac'
+        run: |
+          # Create a temporary keychain
+          security create-keychain -p "temppass" $RUNNER_TEMP/build.keychain
+          security list-keychains -d user -s $RUNNER_TEMP/build.keychain
+          security unlock-keychain -p "temppass" $RUNNER_TEMP/build.keychain
+          security set-keychain-settings -t 3600 -u $RUNNER_TEMP/build.keychain
+          
+          # Generate a self-signed certificate using openssl
+          openssl req -x509 -newkey rsa:4096 -keyout $RUNNER_TEMP/key.pem -out $RUNNER_TEMP/cert.pem -days 365 -nodes -subj "/CN=MeshCore Forge Certificate/O=MeshCore/C=US"
+          
+          # Convert to p12 format
+          openssl pkcs12 -export -out $RUNNER_TEMP/cert.p12 -inkey $RUNNER_TEMP/key.pem -in $RUNNER_TEMP/cert.pem -password pass:temppass
+          
+          # Import into keychain
+          security import $RUNNER_TEMP/cert.p12 -k $RUNNER_TEMP/build.keychain -P temppass -A
+          
+          # Trust the certificate for code signing
+          security set-key-partition-list -S apple-tool:,apple: -s -k "temppass" $RUNNER_TEMP/build.keychain
+      - name: Build Electron app
+        run: npm run build-${{ matrix.platform }} --publish=never
+        env:
+          # Disable auto-publishing
+          GITHUB_TOKEN: ""
+          GH_TOKEN: ""
+          CI: "false"
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          CSC_KEYCHAIN: ${{ runner.temp }}/build.keychain
+
+      - name: Clean up keychain (macOS)
+        if: always() && matrix.platform == 'mac'
+        run: |
+          security delete-keychain $RUNNER_TEMP/build.keychain || true
+      - name: List build outputs (debug)
+        run: ls -la build/
+        shell: bash
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build
+          path: |
+            build/*.dmg
+            build/*.exe
+            build/*.AppImage
+            build/*.deb
+            build/*.rpm
+          retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.create_release == true
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            **/*.dmg
+            **/*.exe  
+            **/*.AppImage
+            **/*.deb
+            **/*.rpm
+          draft: true
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-to-draft:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        
+      - name: List downloaded artifacts (debug)
+        run: |
+          echo "Artifact structure:"
+          find . -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \)
+          echo "Directory structure:"
+          ls -la */
+        
+      - name: Upload to draft releases
+        run: |
+          # Get all draft releases
+          DRAFT_RELEASES=$(gh release list --json isDraft,tagName --jq '.[] | select(.isDraft == true)')
+          
+          if [ -z "$DRAFT_RELEASES" ]; then
+            echo "No draft releases found"
+            exit 0
+          fi
+          
+          echo "Found draft releases:"
+          echo "$DRAFT_RELEASES" | jq -r '.tagName'
+          
+          # Process each draft release
+          echo "$DRAFT_RELEASES" | jq -r '.tagName' | while read -r tag; do
+            echo "Processing draft release: $tag"
+            
+            # Get existing assets for this release
+            EXISTING_ASSETS=$(gh release view "$tag" --json assets --jq '.assets[].name')
+            
+            # Remove existing build artifacts (including both x64 and arm64 variants)
+            if [ -n "$EXISTING_ASSETS" ]; then
+              echo "Removing existing assets:"
+              echo "$EXISTING_ASSETS" | grep -E '\.(dmg|exe|AppImage|deb|rpm)$' | while read -r asset; do
+                echo "  Removing: $asset"
+                gh release delete-asset "$tag" "$asset" --yes || echo "  Failed to remove $asset (may not exist)"
+              done
+            fi
+            
+            # Upload new artifacts from all platform builds
+            echo "Uploading new artifacts to $tag:"
+            
+            # Handle macOS artifacts (may include both x64 and arm64)
+            find mac-build/ -name "*.dmg" 2>/dev/null | while read -r file; do
+              if [ -f "$file" ]; then
+                echo "  Uploading macOS: $(basename "$file")"
+                gh release upload "$tag" "$file" || echo "  Failed to upload $file"
+              fi
+            done
+            
+            # Handle Windows artifacts
+            find win-build/ -name "*.exe" 2>/dev/null | while read -r file; do
+              if [ -f "$file" ]; then
+                echo "  Uploading Windows: $(basename "$file")"
+                gh release upload "$tag" "$file" || echo "  Failed to upload $file"
+              fi
+            done
+            
+            # Handle Linux artifacts
+            find linux-build/ -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" 2>/dev/null | while read -r file; do
+              if [ -f "$file" ]; then
+                echo "  Uploading Linux: $(basename "$file")"
+                gh release upload "$tag" "$file" || echo "  Failed to upload $file"
+              fi
+            done
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
