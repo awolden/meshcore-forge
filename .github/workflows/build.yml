@@ -7,6 +7,10 @@ on:
       - 'v*'
     branches:
       - 'main'
+  # Trigger on pull requests to main
+  pull_request:
+    branches:
+      - 'main'
   # Allow manual triggering for testing
   workflow_dispatch:
     inputs:
