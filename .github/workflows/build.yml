@@ -81,8 +81,18 @@ jobs:
           # Import into keychain
           security import $RUNNER_TEMP/cert.p12 -k $RUNNER_TEMP/build.keychain -P temppass -A
           
+          # Find the certificate and explicitly trust it
+          CERT_SHA1=$(security find-certificate -c "MeshCore Forge Certificate" -Z $RUNNER_TEMP/build.keychain | grep SHA-1 | cut -d' ' -f3)
+          echo "Certificate SHA1: $CERT_SHA1"
+          
           # Trust the certificate for code signing
           security set-key-partition-list -S apple-tool:,apple: -s -k "temppass" $RUNNER_TEMP/build.keychain
+          
+          # Add explicit trust policy
+          security add-trusted-cert -d -r trustRoot -k $RUNNER_TEMP/build.keychain $RUNNER_TEMP/cert.pem
+          
+          # Verify certificate is trusted
+          security find-certificate -c "MeshCore Forge Certificate" -p $RUNNER_TEMP/build.keychain
       - name: Build Electron app
         run: npm run build-${{ matrix.platform }} --publish=never
         env:
