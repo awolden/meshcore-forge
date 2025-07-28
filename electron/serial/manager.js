@@ -10,9 +10,16 @@ class SerialPortManager extends EventEmitter {
     this.isMonitoring = false;
   }
 
-  async listPorts() {
+  async listPorts(retryCount = 0) {
     try {
       const ports = await SerialPort.list();
+      
+      // On Windows, sometimes first call returns empty, retry once
+      if (process.platform === 'win32' && ports.length === 0 && retryCount === 0) {
+        console.log('No ports found on first try, retrying in 500ms...');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return this.listPorts(1);
+      }
       
       // Filter for likely development boards
       const filteredPorts = ports.filter(port => {
@@ -62,6 +69,30 @@ class SerialPortManager extends EventEmitter {
       
     } catch (error) {
       console.error('Failed to list serial ports:', error);
+      
+      // Windows-specific error handling
+      if (process.platform === 'win32') {
+        console.error('Windows serial port detection failed.');
+        console.error('Possible solutions:');
+        console.error('1. Make sure device drivers are installed');
+        console.error('2. Check Device Manager for serial/COM ports');
+        console.error('3. Try running as administrator');
+        console.error('4. Ensure serialport module was rebuilt with electron-rebuild');
+        
+        // Return empty array with helpful message instead of throwing
+        return [{
+          path: 'No ports detected',
+          manufacturer: 'Windows Error',
+          serialNumber: undefined,
+          pnpId: undefined,
+          locationId: undefined,
+          vendorId: undefined,
+          productId: undefined,
+          isLikelyDevBoard: false,
+          displayName: 'No serial ports detected - check drivers and permissions'
+        }];
+      }
+      
       throw error;
     }
   }
@@ -104,10 +135,8 @@ class SerialPortManager extends EventEmitter {
             return;
           }
 
-          // Set up line parser for monitoring
           this.parser = this.connectedPort.pipe(new ReadlineParser({ delimiter: '\n' }));
           
-          // Set up event handlers
           this.connectedPort.on('error', (error) => {
             console.error('Serial port error:', error);
             this.emit('error', error);
@@ -197,7 +226,6 @@ class SerialPortManager extends EventEmitter {
     };
   }
 
-  // Reset the connected device (useful for ESP32/Arduino)
   async resetDevice() {
     if (!this.connectedPort || !this.connectedPort.isOpen) {
       throw new Error('No serial port connected');

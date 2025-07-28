@@ -21,10 +21,6 @@ let resourceManager;
 
 function createWindow() {
   const iconPath = path.resolve(__dirname, '..', 'assets', 'dark_icon.png');
-  console.log('Icon path:', iconPath);
-  console.log('Icon exists:', fs.existsSync(iconPath));
-  
-  // Create native image for better dev build support
   let icon = null;
   if (fs.existsSync(iconPath)) {
     icon = nativeImage.createFromPath(iconPath);
@@ -47,7 +43,8 @@ function createWindow() {
   if (process.argv.includes('--dev')) {
     mainWindow.loadURL('http://localhost:3000');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const indexPath = path.join(__dirname, '../dist/index.html');
+    mainWindow.loadFile(indexPath);
   }
 
   // Show window when ready to prevent visual flash

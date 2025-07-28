@@ -23,14 +23,23 @@ class PlatformIOManager {
     // MeshCore repo is in userData/resources/meshcore
     this.workingDirectory = path.join(appResourcesPath, 'meshcore');
     
-    // Python and PlatformIO will be bundled with the app
-    const appPath = app.getAppPath();
-    const bundledResourcesPath = path.join(appPath, 'resources');
+    // Python and PlatformIO are bundled with the app in process.resourcesPath
+    // In packaged apps: process.resourcesPath points to app.asar/resources/
+    // In dev: use local resources directory
+    let bundledResourcesPath;
+    if (process.argv.includes('--dev')) {
+      bundledResourcesPath = path.join(__dirname, '../../resources');
+    } else {
+      bundledResourcesPath = process.resourcesPath;
+    }
+    
     this.pythonPath = this.getPythonPath(bundledResourcesPath);
     this.pioPath = this.getPlatformIOPath(bundledResourcesPath);
     
     console.log('PlatformIO Manager initialized');
     console.log('Platform:', process.platform);
+    console.log('Dev mode:', process.argv.includes('--dev'));
+    console.log('Bundled resources path:', bundledResourcesPath);
     console.log('Working directory (MeshCore):', this.workingDirectory);
     console.log('Python path:', this.pythonPath);
     console.log('PIO path:', this.pioPath);
@@ -56,7 +65,13 @@ class PlatformIOManager {
     
     switch (platform) {
       case 'win32':
-        return path.join(resourcesPath, 'platformio', 'penv', 'Scripts', 'pio.exe');
+        // Use relocatable wrapper if available, fallback to direct exe
+        const wrapperPath = path.join(resourcesPath, 'platformio', 'penv', 'Scripts', 'pio-wrapper.bat');
+        const directPath = path.join(resourcesPath, 'platformio', 'penv', 'Scripts', 'pio.exe');
+        const usingWrapper = fs.existsSync(wrapperPath);
+        const pathInfo = `Windows PlatformIO: Using ${usingWrapper ? 'wrapper' : 'direct'} (${usingWrapper ? wrapperPath : directPath})`;
+        console.log(pathInfo);
+        return usingWrapper ? wrapperPath : directPath;
       case 'darwin':
       case 'linux':
         return path.join(resourcesPath, 'platformio', 'penv', 'bin', 'pio');
@@ -67,21 +82,33 @@ class PlatformIOManager {
 
   async checkDependencies() {
     try {
+      console.log('🔍 Checking dependencies...');
+      console.log('Working directory:', this.workingDirectory);
+      console.log('Python path:', this.pythonPath);
+      console.log('PIO path:', this.pioPath);
+
       // Check if working directory exists
-      if (!await fs.pathExists(this.workingDirectory)) {
+      const workingDirExists = await fs.pathExists(this.workingDirectory);
+      console.log('Working directory exists:', workingDirExists);
+      if (!workingDirExists) {
         throw new Error('MeshCore repository not found. Please run resource bundling first.');
       }
 
       // Check if Python exists
-      if (!await fs.pathExists(this.pythonPath)) {
+      const pythonExists = await fs.pathExists(this.pythonPath);
+      console.log('Python exists:', pythonExists);
+      if (!pythonExists) {
         throw new Error('Python runtime not found. Please run resource bundling first.');
       }
 
       // Check if PlatformIO exists
-      if (!await fs.pathExists(this.pioPath)) {
+      const pioExists = await fs.pathExists(this.pioPath);
+      console.log('PlatformIO exists:', pioExists);
+      if (!pioExists) {
         throw new Error('PlatformIO not found. Please run resource bundling first.');
       }
 
+      console.log('✅ All dependencies found');
       return true;
     } catch (error) {
       console.error('Dependency check failed:', error.message);
@@ -173,7 +200,6 @@ class PlatformIOManager {
         onData('🔍 Validating configuration...\r\n');
       }
 
-      // Get board configuration
       const board = config.getBoard(uploadConfig.board);
       const variant = config.getVariant(uploadConfig.variant);
       
@@ -230,11 +256,9 @@ class PlatformIOManager {
         onData('🚀 Starting PlatformIO upload...\r\n\r\n');
       }
       
-      // Execute the actual PlatformIO command
       try {
         await this.executeCommand(command, onData, onComplete, onError);
       } finally {
-        // Clean up any temporary environments
         await this.cleanupCustomEnvironments();
       }
       
@@ -249,21 +273,87 @@ class PlatformIOManager {
   }
 
 
+  parseCommandArgs(commandString) {
+    const args = [];
+    let current = '';
+    let inQuotes = false;
+    let i = 0;
+    
+    while (i < commandString.length) {
+      const char = commandString[i];
+      
+      if (char === '"' && (i === 0 || commandString[i-1] !== '\\')) {
+        inQuotes = !inQuotes;
+      } else if (char === ' ' && !inQuotes) {
+        if (current.trim()) {
+          args.push(current.trim());
+          current = '';
+        }
+      } else {
+        current += char;
+      }
+      i++;
+    }
+    
+    if (current.trim()) {
+      args.push(current.trim());
+    }
+    
+    return args;
+  }
+
   async executeCommand(command, onData, onComplete, onError) {
     return new Promise((resolve, reject) => {
       try {
         console.log('Executing command:', command);
         console.log('Working directory:', this.workingDirectory);
         
+        if (onData) {
+          onData(`🔧 Executing: ${command}\r\n`);
+          onData(`📁 Working directory: ${this.workingDirectory}\r\n`);
+          onData(`🛠️  PlatformIO path: ${this.pioPath}\r\n`);
+        }
+        
         // Execute command via shell (environment variables are in the command string)
-        this.currentProcess = spawn('sh', ['-c', command], {
-          cwd: this.workingDirectory,
-          env: {
-            ...process.env,
-            PYTHONPATH: path.dirname(this.pythonPath),
-            PATH: `${path.dirname(this.pioPath)}:${process.env.PATH}`
+        const isWindows = process.platform === 'win32';
+        const pathSeparator = isWindows ? ';' : ':';
+        
+        if (isWindows && this.pioPath.endsWith('.bat')) {
+          // On Windows with batch files, spawn directly to avoid quoting issues
+          // Parse arguments properly to handle quoted strings
+          // remove pio to better control the exec 
+          const args = this.parseCommandArgs(command.substring(4));
+          
+          if (onData) {
+            onData(`🔧 Windows direct spawn: ${this.pioPath} ${args.join(' ')}\r\n`);
           }
-        });
+          
+          this.currentProcess = spawn(this.pioPath, args, {
+            cwd: this.workingDirectory,
+            env: {
+              ...process.env,
+              PYTHONPATH: path.dirname(this.pythonPath),
+              PATH: `${path.dirname(this.pioPath)}${pathSeparator}${process.env.PATH}`
+            }
+          });
+        } else {
+          // Unix or non-batch files - use shell
+          const shell = isWindows ? 'cmd' : 'sh';
+          const shellFlag = isWindows ? '/c' : '-c';
+          
+          if (onData) {
+            onData(`🔧 Shell command: ${command}\r\n`);
+          }
+          
+          this.currentProcess = spawn(shell, [shellFlag, command], {
+            cwd: this.workingDirectory,
+            env: {
+              ...process.env,
+              PYTHONPATH: path.dirname(this.pythonPath),
+              PATH: `${path.dirname(this.pioPath)}${pathSeparator}${process.env.PATH}`
+            }
+          });
+        }
 
         this.currentProcess.stdout.on('data', (data) => {
           if (onData) onData(data.toString());
@@ -278,7 +368,6 @@ class PlatformIOManager {
           this.currentProcess = null;
           
           if (signal === 'SIGTERM' || signal === 'SIGKILL') {
-            // Process was stopped by user
             const result = { 
               success: false, 
               exitCode: code,
@@ -328,10 +417,8 @@ class PlatformIOManager {
       if (this.currentProcess) {
         console.log('Terminating PlatformIO process...');
         
-        // Try graceful termination first
         this.currentProcess.kill('SIGTERM');
         
-        // Force kill after 5 seconds if process doesn't terminate
         const forceKillTimeout = setTimeout(() => {
           if (this.currentProcess) {
             console.log('Force killing PlatformIO process...');
@@ -339,7 +426,6 @@ class PlatformIOManager {
           }
         }, 5000);
         
-        // Wait for process to actually terminate
         return new Promise((resolve) => {
           if (!this.currentProcess) {
             resolve();
@@ -402,7 +488,6 @@ ${formattedFlags}
       console.log('Created custom environment:', customEnvName);
       console.log('Custom config written to:', customConfigPath);
       
-      // Debug: show only our custom environment section
       if (onData) {
         onData(`🔍 Debug - Custom environment prepended to platformio.ini:\r\n${customEnvironment}\r\n`);
       }
@@ -424,7 +509,6 @@ ${formattedFlags}
       }
     } catch (error) {
       console.error('Failed to cleanup custom environments:', error);
-      // Don't throw - cleanup shouldn't fail the main operation
     }
   }
 

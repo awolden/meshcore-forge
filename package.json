@@ -1,6 +1,6 @@
 {
   "name": "meshcore-forge",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.1",
   "description": "Cross-platform Electron application for building MeshCore firmware",
   "main": "electron/main.js",
   "author": "MeshCore Team",
@@ -11,18 +11,19 @@
     "dev": "concurrently \"vite\" \"nodemon --watch electron --ext js --exec \\\"electron . --dev\\\"\"",
     "dev:electron": "nodemon --watch electron --ext js --exec \"electron . --dev\"",
     "dev:react": "vite",
-    "build": "vite build && node scripts/bundle-resources.js && electron-builder",
-    "build-win": "vite build && node scripts/bundle-resources.js && electron-builder --win",
-    "build-mac": "vite build && node scripts/bundle-resources.js && electron-builder --mac",
-    "build-linux": "vite build && node scripts/bundle-resources.js && electron-builder --linux",
+    "build": "vite build && node scripts/bundle-resources.js && electron-builder --publish=never",
+    "build-win": "vite build && node scripts/bundle-resources.js && electron-builder --win --publish=never",
+    "build-mac": "vite build && node scripts/bundle-resources.js && electron-builder --mac --publish=never",
+    "build-linux": "vite build && node scripts/bundle-resources.js && electron-builder --linux --publish=never",
     "bundle-resources": "node scripts/bundle-resources.js",
     "clean": "rimraf build dist out",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps && (npx @electron/rebuild || echo 'Rebuild failed, using prebuilt binaries')"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
     "electron": "^28.0.0",
     "electron-builder": "^24.6.4",
+    "@electron/rebuild": "^3.6.0",
     "nodemon": "^3.1.10",
     "rimraf": "^5.0.0",
     "@types/react": "^18.2.0",
@@ -38,7 +39,6 @@
     "@xterm/xterm": "^5.5.0",
     "fs-extra": "^11.0.0",
     "serialport": "^13.0.0",
-    "simple-git": "^3.28.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "lucide-react": "^0.309.0"
@@ -46,35 +46,50 @@
   "build": {
     "appId": "com.meshcore.forge",
     "productName": "MeshCore Forge",
+    "publish": [],
     "directories": {
       "output": "build"
     },
     "files": [
       "electron/**/*",
-      "src/**/*",
+      "dist/**/*",
       "package.json"
     ],
     "extraResources": [
       {
         "from": "resources/python/",
-        "to": "resources/python/"
+        "to": "python/"
       },
       {
         "from": "resources/platformio/",
-        "to": "resources/platformio/"
+        "to": "platformio/"
       }
     ],
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.ico"
+      "icon": "assets/dark_icon.png",
+      "publish": []
     },
     "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns"
+      "identity": "MeshCore Forge Certificate",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "assets/dark_icon_512.png",
+      "publish": []
+    },
+    "dmg": {
+      "sign": false
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/icon.png"
+      "icon": "assets/dark_icon.png",
+      "publish": []
     }
   }
 }

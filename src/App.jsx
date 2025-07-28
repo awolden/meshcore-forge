@@ -3,6 +3,8 @@ import { RefreshCw, Zap, Square, GitBranch, Usb, Settings } from 'lucide-react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
+// Import logo from src/assets for proper Electron bundling
+import darkLogoUrl from './assets/dark_logo.png'
 
 function App() {
   const [version, setVersion] = useState('Loading...')
@@ -47,6 +49,8 @@ function App() {
         fontSize: 12,
         cursorBlink: true,
         convertEol: true,
+        rightClickSelectsWord: true,
+        allowTransparency: false,
       })
 
       // Create fit addon
@@ -60,6 +64,72 @@ function App() {
       // Store references
       terminalInstanceRef.current = terminal
       fitAddonRef.current = fitAddon
+
+      // Add copy/paste support
+      terminal.attachCustomKeyEventHandler((e) => {
+        // Ctrl+C to copy
+        if (e.ctrlKey && e.key === 'c' && e.type === 'keydown') {
+          const selection = terminal.getSelection()
+          if (selection) {
+            navigator.clipboard.writeText(selection)
+            return false
+          }
+        }
+        // Ctrl+V to paste
+        if (e.ctrlKey && e.key === 'v' && e.type === 'keydown') {
+          navigator.clipboard.readText().then((text) => {
+            terminal.write(text)
+          })
+          return false
+        }
+        return true
+      })
+
+      // Right-click context menu
+      terminalRef.current.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        const selection = terminal.getSelection()
+        
+        // Create context menu
+        const menu = document.createElement('div')
+        menu.className = 'absolute bg-gray-800 border border-gray-600 rounded shadow-lg z-50'
+        menu.style.left = `${e.pageX}px`
+        menu.style.top = `${e.pageY}px`
+        
+        const copyItem = document.createElement('div')
+        copyItem.className = 'px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-white'
+        copyItem.textContent = 'Copy'
+        copyItem.style.opacity = selection ? '1' : '0.5'
+        copyItem.addEventListener('click', () => {
+          if (selection) {
+            navigator.clipboard.writeText(selection)
+          }
+          document.body.removeChild(menu)
+        })
+        
+        const pasteItem = document.createElement('div')
+        pasteItem.className = 'px-3 py-2 hover:bg-gray-700 cursor-pointer text-sm text-white'
+        pasteItem.textContent = 'Paste'
+        pasteItem.addEventListener('click', () => {
+          navigator.clipboard.readText().then((text) => {
+            terminal.write(text)
+          })
+          document.body.removeChild(menu)
+        })
+        
+        menu.appendChild(copyItem)
+        menu.appendChild(pasteItem)
+        document.body.appendChild(menu)
+        
+        // Close menu when clicking elsewhere
+        const closeMenu = (event) => {
+          if (!menu.contains(event.target)) {
+            document.body.removeChild(menu)
+            document.removeEventListener('click', closeMenu)
+          }
+        }
+        setTimeout(() => document.addEventListener('click', closeMenu), 0)
+      })
 
       // Welcome message
       terminal.writeln('MeshCore Forge Terminal')
@@ -474,7 +544,7 @@ function App() {
       {/* Header */}
       <header className="bg-dark-panel border-b border-dark-border px-5 py-3 flex justify-between items-center">
         <div className="flex items-center gap-1">
-          <img src="/dark_logo.png" alt="MeshCore" className="h-8" />
+          <img src={darkLogoUrl} alt="MeshCore" className="h-8" />
           <span className="text-2xl font-inter font-medium text-dark-text tracking-wide">Forge</span>
         </div>
         <span className="text-xs text-dark-muted">{version}</span>

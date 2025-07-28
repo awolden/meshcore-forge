@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+
+// file bundles al the resources needed for MeshCore Forge
+// including Python and PlatformIO, and prepares the resources directory structure
+// for the Electron app to use at runtime
+
 const fs = require('fs-extra');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -10,7 +15,7 @@ console.log('🔧 Bundling resources for MeshCore Forge...');
 
 // Download URLs for embedded Python
 const PYTHON_DOWNLOADS = {
-  'win32': 'https://www.python.org/ftp/python/3.11.7/python-3.11.7-embed-amd64.zip',
+  'win32': 'https://github.com/indygreg/python-build-standalone/releases/download/20241016/cpython-3.11.10+20241016-x86_64-pc-windows-msvc-install_only.tar.gz',
   'darwin': 'https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-apple-darwin-install_only.tar.gz',
   'linux': 'https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz'
 };
@@ -65,10 +70,20 @@ async function extractArchive(archivePath, extractDir) {
   
   try {
     if (archivePath.endsWith('.zip')) {
-      // Use system unzip for cross-platform compatibility
-      execSync(`unzip -q "${archivePath}" -d "${extractDir}"`, { stdio: 'inherit' });
+      if (platform === 'win32') {
+        // Use PowerShell on Windows
+        execSync(`powershell -command "Expand-Archive -Path '${archivePath}' -DestinationPath '${extractDir}' -Force"`, { stdio: 'inherit' });
+      } else {
+        // Use system unzip for Unix-like systems
+        execSync(`unzip -q "${archivePath}" -d "${extractDir}"`, { stdio: 'inherit' });
+      }
     } else if (archivePath.endsWith('.tar.gz')) {
-      execSync(`tar -xzf "${archivePath}" -C "${extractDir}"`, { stdio: 'inherit' });
+      if (platform === 'win32') {
+        // Use tar command available in Windows 10+
+        execSync(`tar -xzf "${archivePath}" -C "${extractDir}"`, { stdio: 'inherit' });
+      } else {
+        execSync(`tar -xzf "${archivePath}" -C "${extractDir}"`, { stdio: 'inherit' });
+      }
     }
     
     console.log(`✅ Extracted to ${extractDir}`);
@@ -89,21 +104,40 @@ async function installPlatformIO(pythonExecutable, platformioDir) {
     const venvDir = path.join(platformioDir, 'penv');
     console.log(`🔧 Creating virtual environment at ${venvDir}...`);
     
+    // Create virtual environment without hardcoded paths
     execSync(`"${pythonExecutable}" -m venv "${venvDir}"`, { stdio: 'inherit' });
     
-    // Get pip executable path
+    // Get python executable path in venv
     const platform = process.platform;
-    const pipExecutable = platform === 'win32' 
-      ? path.join(venvDir, 'Scripts', 'pip.exe')
-      : path.join(venvDir, 'bin', 'pip');
+    const venvPythonExecutable = platform === 'win32' 
+      ? path.join(venvDir, 'Scripts', 'python.exe')
+      : path.join(venvDir, 'bin', 'python');
     
-    // Upgrade pip
+    // Upgrade pip using the modern method
     console.log('🔧 Upgrading pip...');
-    execSync(`"${pipExecutable}" install --upgrade pip`, { stdio: 'inherit' });
+    execSync(`"${venvPythonExecutable}" -m pip install --upgrade pip`, { stdio: 'inherit' });
     
     // Install PlatformIO
     console.log('📦 Installing PlatformIO core...');
-    execSync(`"${pipExecutable}" install platformio`, { stdio: 'inherit' });
+    execSync(`"${venvPythonExecutable}" -m pip install platformio`, { stdio: 'inherit' });
+    
+    // Make the virtual environment relocatable on Windows
+    if (platform === 'win32') {
+      console.log('🔧 Making virtual environment relocatable...');
+      const scriptsDir = path.join(venvDir, 'Scripts');
+      
+      // Create a batch file that uses base Python with venv PYTHONPATH
+      const pioWrapperPath = path.join(scriptsDir, 'pio-wrapper.bat');
+      const wrapperContent = `@echo off
+set "SCRIPT_DIR=%~dp0"
+set "BASE_PYTHON=%SCRIPT_DIR%..\\..\\..\\python\\python.exe"
+set "VENV_SITE_PACKAGES=%SCRIPT_DIR%..\\Lib\\site-packages"
+set "PYTHONPATH=%VENV_SITE_PACKAGES%"
+"%BASE_PYTHON%" -m platformio %*
+`;
+      await fs.writeFile(pioWrapperPath, wrapperContent);
+      console.log('✅ Created relocatable PlatformIO wrapper');
+    }
     
     console.log('✅ PlatformIO installation completed');
     

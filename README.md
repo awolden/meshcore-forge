@@ -2,6 +2,22 @@
 
 A cross-platform Electron application for building MeshCore firmware. Provides a GUI interface for configuring build flags, selecting boards and variants, and executing PlatformIO builds with bundled Python runtime.
 
+![screenshot](assets/screenshot.png)
+
+## Download
+
+**📦 [Download the latest release](https://github.com/awolden/meshcore-forge/releases)**
+
+Pre-built binaries available for Windows, macOS, and Linux.
+
+### macOS Security Note
+If macOS shows a security warning about the app being from an "unidentified developer":
+1. Right-click the app and select "Open" (instead of double-clicking)
+2. Click "Open" in the security dialog that appears
+3. The app will then open normally on future launches
+
+This is expected behavior for unsigned applications and is safe to bypass.
+
 ## Features
 
 - **Cross-platform support** - Windows, macOS, and Linux

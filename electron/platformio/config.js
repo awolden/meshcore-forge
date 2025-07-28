@@ -578,7 +578,7 @@ const ALL_FLAGS = {
   ADMIN_PASSWORD: { name: 'Admin Password', type: 'password', default: 'password', description: 'Admin password', group: 'Security Settings', order: 1 },
   ROOM_PASSWORD: { name: 'Room Password', type: 'password', default: 'hello', description: 'Room password', group: 'Security Settings', order: 2 },
   GUEST_PASSWORD: { name: 'Guest Password', type: 'password', default: '', description: 'Guest access password', group: 'Security Settings', order: 3 },
-  ADVERT_NAME: { name: 'Advertised Name', type: 'text', default: 'MeshCore Room', description: 'Advertised device name', group: 'Device Settings', order: 1 },
+  ADVERT_NAME: { name: 'Advertised Name', type: 'text', default: 'MeshCore Node', description: 'Advertised device name', group: 'Device Settings', order: 1 },
   ADVERT_LAT: { name: 'Latitude', type: 'number', default: 0.0, description: 'GPS latitude', group: 'Location Settings', order: 1 },
   ADVERT_LON: { name: 'Longitude', type: 'number', default: 0.0, description: 'GPS longitude', group: 'Location Settings', order: 2 },
   
@@ -687,7 +687,7 @@ function generateBuildFlags(board, variant, userFlags = {}, customFlags = '') {
       if (config.type === 'checkbox' && value === true) {
         flags.push(`${key}=1`);
       } else if (config.type === 'text' || config.type === 'password') {
-        // Text and password fields need double quotes wrapped in single quotes (MeshCore format)
+        // Text and password fields need double quotes wrapped in single quotes (pio format)
         flags.push(`${key}='"${value}"'`);
       } else if (config.type !== 'checkbox') {
         flags.push(`${key}=${value}`);
@@ -704,6 +704,7 @@ function generateBuildFlags(board, variant, userFlags = {}, customFlags = '') {
         const value = userFlags[flag];
         
         // Apply quoting logic for text/password fields
+        // kinda messy but works I guess
         if (flagConfig && (flagConfig.type === 'text' || flagConfig.type === 'password')) {
           flags.push(`${flag}='"${value}"'`);
         } else {
