@@ -152,8 +152,16 @@ jobs:
         
       - name: Upload to draft releases
         run: |
+          # Debug: Show all releases first
+          echo "=== ALL RELEASES ==="
+          gh release list --json isDraft,tagName,name || echo "Failed to list releases"
+          
           # Get all draft releases
+          echo "=== FILTERING DRAFT RELEASES ==="
           DRAFT_RELEASES=$(gh release list --json isDraft,tagName --jq '.[] | select(.isDraft == true)')
+          
+          echo "Raw draft releases result:"
+          echo "'$DRAFT_RELEASES'"
           
           if [ -z "$DRAFT_RELEASES" ]; then
             echo "No draft releases found"
