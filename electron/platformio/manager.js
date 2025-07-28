@@ -75,12 +75,12 @@ class PlatformIOManager {
       case 'darwin':
       case 'linux':
         // Use relocatable wrapper if available, fallback to direct executable
-        const wrapperPath = path.join(resourcesPath, 'platformio', 'penv', 'bin', 'pio-wrapper');
-        const directPath = path.join(resourcesPath, 'platformio', 'penv', 'bin', 'pio');
-        const usingWrapper = fs.existsSync(wrapperPath);
-        const pathInfo = `Unix PlatformIO: Using ${usingWrapper ? 'wrapper' : 'direct'} (${usingWrapper ? wrapperPath : directPath})`;
-        console.log(pathInfo);
-        return usingWrapper ? wrapperPath : directPath;
+        const unixWrapperPath = path.join(resourcesPath, 'platformio', 'penv', 'bin', 'pio-wrapper');
+        const unixDirectPath = path.join(resourcesPath, 'platformio', 'penv', 'bin', 'pio');
+        const usingUnixWrapper = fs.existsSync(unixWrapperPath);
+        const unixPathInfo = `Unix PlatformIO: Using ${usingUnixWrapper ? 'wrapper' : 'direct'} (${usingUnixWrapper ? unixWrapperPath : unixDirectPath})`;
+        console.log(unixPathInfo);
+        return usingUnixWrapper ? unixWrapperPath : unixDirectPath;
       default:
         return 'pio'; // Fallback to system PlatformIO
     }
