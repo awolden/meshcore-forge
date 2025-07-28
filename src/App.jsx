@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { RefreshCw, Zap, Square, GitBranch, Usb, Settings } from 'lucide-react'
+import { RefreshCw, Zap, Square, GitBranch, Usb, Settings, Wrench } from 'lucide-react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import '@xterm/xterm/css/xterm.css'
@@ -346,6 +346,43 @@ function App() {
     }))
   }
 
+  const handleBuild = async () => {
+    if (!selectedBoard || !selectedVariant) {
+      alert('Please select board and variant')
+      return
+    }
+
+    // Clear terminal before starting
+    if (terminalInstanceRef.current) {
+      terminalInstanceRef.current.clear()
+      terminalInstanceRef.current.writeln('🔨 Starting firmware build...')
+      terminalInstanceRef.current.writeln(`📋 Board: ${selectedBoard}`)
+      terminalInstanceRef.current.writeln(`🔧 Variant: ${selectedVariant}`)
+      terminalInstanceRef.current.writeln('')
+    }
+
+    setIsFlashing(true)
+    setStatus('Building firmware...')
+
+    try {
+      const config = {
+        board: selectedBoard,
+        variant: selectedVariant,
+        flags: flags,
+        customFlags: customFlags
+      }
+
+      await window.electronAPI.startBuild(config)
+    } catch (error) {
+      console.error('Build failed:', error)
+      setStatus(`Build failed: ${error.message}`)
+      if (terminalInstanceRef.current) {
+        terminalInstanceRef.current.writeln(`\r\n❌ Build failed: ${error.message}`)
+      }
+      setIsFlashing(false)
+    }
+  }
+
   const handleFlash = async () => {
     if (!selectedBoard || !selectedVariant || !selectedPort) {
       alert('Please select board, variant, and serial port')
@@ -537,6 +574,7 @@ function App() {
     )
   }
 
+  const canBuild = selectedBoard && selectedVariant && !isFlashing
   const canFlash = selectedBoard && selectedVariant && selectedPort && !isFlashing
 
   return (
@@ -702,14 +740,24 @@ function App() {
                 Erase board first
               </label>
             </div>
-            <button
-              onClick={isFlashing ? handleStopFlash : handleFlash}
-              disabled={!canFlash && !isFlashing}
-              className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded transition-colors flex items-center justify-center gap-2 font-medium"
-            >
-              {isFlashing ? <Square size={16} /> : <Zap size={16} />}
-              {isFlashing ? 'Stop Flash' : 'Flash Firmware'}
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={isFlashing ? handleStopFlash : handleBuild}
+                disabled={!canBuild && !isFlashing}
+                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded transition-colors flex items-center justify-center gap-2 font-medium"
+              >
+                {isFlashing ? <Square size={16} /> : <Wrench size={16} />}
+                {isFlashing ? 'Stop Build' : 'Build Only'}
+              </button>
+              <button
+                onClick={isFlashing ? handleStopFlash : handleFlash}
+                disabled={!canFlash && !isFlashing}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded transition-colors flex items-center justify-center gap-2 font-medium"
+              >
+                {isFlashing ? <Square size={16} /> : <Zap size={16} />}
+                {isFlashing ? 'Stop Flash' : 'Build & Flash'}
+              </button>
+            </div>
           </section>
         </div>
 
