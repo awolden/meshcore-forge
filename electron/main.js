@@ -5,6 +5,13 @@ const PlatformIOManager = require('./platformio/manager');
 const SerialPortManager = require('./serial/manager');
 const ResourceManager = require('./resources/manager');
 
+// Safe webContents send helper
+function send(channel, data) {
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents && !mainWindow.webContents.isDestroyed()) {
+    mainWindow.webContents.send(channel, data);
+  }
+}
+
 // Set app name early (especially important for dev builds on macOS)
 app.setName('MeshCore Forge');
 
@@ -112,42 +119,42 @@ app.whenReady().then(async () => {
   
   // Set up serial port event handlers
   serialPortManager.on('data', (data) => {
-    mainWindow.webContents.send('serial-data', data);
+    send('serial-data', data);
   });
   
   serialPortManager.on('error', (error) => {
-    mainWindow.webContents.send('serial-error', error);
+    send('serial-error', error);
   });
   
   serialPortManager.on('disconnected', () => {
-    mainWindow.webContents.send('serial-disconnected');
+    send('serial-disconnected');
   });
 
   // Set up resource manager event handlers
   resourceManager.on('status', (message) => {
     if (mainWindow) {
-      mainWindow.webContents.send('resource-status', message);
+      send('resource-status', message);
     }
     console.log('Resource status:', message);
   });
 
   resourceManager.on('progress', (progress) => {
     if (mainWindow) {
-      mainWindow.webContents.send('resource-progress', progress);
+      send('resource-progress', progress);
     }
     console.log('Resource progress:', progress);
   });
 
   resourceManager.on('error', (error) => {
     if (mainWindow) {
-      mainWindow.webContents.send('resource-error', error);
+      send('resource-error', error);
     }
     console.error('Resource error:', error);
   });
 
   resourceManager.on('clone-complete', () => {
     if (mainWindow) {
-      mainWindow.webContents.send('meshcore-clone-complete');
+      send('meshcore-clone-complete');
     }
     console.log('MeshCore clone completed');
   });
@@ -232,15 +239,15 @@ ipcMain.handle('start-build', async (event, config) => {
       config,
       (data) => {
         // Send terminal data to renderer
-        mainWindow.webContents.send('terminal-data', data);
+        send('terminal-data', data);
       },
       (result) => {
         // Send build complete event
-        mainWindow.webContents.send('build-complete', result);
+        send('build-complete', result);
       },
       (error) => {
         // Send build error event
-        mainWindow.webContents.send('build-error', error);
+        send('build-error', error);
       }
     );
 
@@ -261,15 +268,15 @@ ipcMain.handle('start-upload', async (event, config) => {
       config,
       (data) => {
         // Send terminal data to renderer
-        mainWindow.webContents.send('terminal-data', data);
+        send('terminal-data', data);
       },
       (result) => {
         // Send upload complete event
-        mainWindow.webContents.send('upload-complete', result);
+        send('upload-complete', result);
       },
       (error) => {
         // Send upload error event
-        mainWindow.webContents.send('upload-error', error);
+        send('upload-error', error);
       }
     );
 
