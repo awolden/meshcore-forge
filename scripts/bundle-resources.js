@@ -137,6 +137,23 @@ set "PYTHONPATH=%VENV_SITE_PACKAGES%"
 `;
       await fs.writeFile(pioWrapperPath, wrapperContent);
       console.log('✅ Created relocatable PlatformIO wrapper');
+    } else {
+      // Create Unix wrapper for macOS and Linux
+      console.log('🔧 Making Unix virtual environment relocatable...');
+      const binDir = path.join(venvDir, 'bin');
+      
+      // Create a shell script that uses base Python with venv PYTHONPATH
+      const pioWrapperPath = path.join(binDir, 'pio-wrapper');
+      const wrapperContent = `#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BASE_PYTHON="$SCRIPT_DIR/../../../python/bin/python3"
+VENV_SITE_PACKAGES="$SCRIPT_DIR/../lib/python3.11/site-packages"
+export PYTHONPATH="$VENV_SITE_PACKAGES"
+"$BASE_PYTHON" -m platformio "$@"
+`;
+      await fs.writeFile(pioWrapperPath, wrapperContent);
+      await fs.chmod(pioWrapperPath, 0o755); // Make executable
+      console.log('✅ Created relocatable Unix PlatformIO wrapper');
     }
     
     console.log('✅ PlatformIO installation completed');
